@@ -1,0 +1,92 @@
+version: '3.8'
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  user-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: user_service
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/pgdata/user:/var/lib/postgresql/data
+
+  order-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: order_service
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./docker/pgdata/order:/var/lib/postgresql/data
+
+  notification-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: notification_service
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5435:5432"
+    volumes:
+      - ./docker/pgdata/notification:/var/lib/postgresql/data
+
+  user-service:
+    build:
+      context: ./user-service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - user-db
+      - rabbitmq
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: user-db
+      DB_PORT: 5432
+      DB_DATABASE: user_service
+      DB_USERNAME: user
+      DB_PASSWORD: secret
+
+  order-service:
+    build:
+      context: ./order-service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - order-db
+      - rabbitmq
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: order-db
+      DB_PORT: 5432
+      DB_DATABASE: order_service
+      DB_USERNAME: user
+      DB_PASSWORD: secret
+
+  notification-service:
+    build:
+      context: ./notification-service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - notification-db
+      - rabbitmq
+    environment:
+      DB_CONNECTION: pgsql
+      DB_HOST: notification-db
+      DB_PORT: 5432
+      DB_DATABASE: notification_service
+      DB_USERNAME: user
+      DB_PASSWORD: secret
