@@ -9,10 +9,15 @@ class OrderController extends Controller
 {
     public function store(Request $request, RabbitMQPublisher $publisher)
     {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'total' => 'required|numeric',
+        ]);
+
         $orderData = [
             'order_id' => uniqid(),
-            'user_email' => $request->input('email'),
-            'total' => $request->input('total'),
+            'user_email' => $data['email'],
+            'total' => $data['total'],
         ];
 
         $publisher->publishOrderCreated($orderData);
